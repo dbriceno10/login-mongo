@@ -10,10 +10,19 @@ const register = async (req, res) => {
   try {
     const emailUser = await User.findOne({ email: email.trim().toLowerCase() });
     if (emailUser) {
-      return res.status(404).send({ message: "El usuario ya existe" });
+      return res.status(404).send({ message: "El email ya se ha registrado" });
+    }
+    const usernameUser = await User.findOne({
+      username: username.trim().toLowerCase(),
+    });
+    if (usernameUser) {
+      return res.status(404).send({ message: "El username ya se ha registrado" });
     }
     if (password !== repitePassword) {
       return res.status(404).send({ message: "Las contraseñas no coinciden" });
+    }
+    if(password.length < 6){
+      return res.status(404).send({ message: "La contraseña debe tener al menos 6 caracteres" });
     }
     if (!avatar) {
       avatar =

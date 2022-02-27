@@ -1,6 +1,8 @@
 const User = require("../../../models/User");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const { singToken, isAuthenticated } = require("../utils/singToken");
 const { BASE, ITERATIONS, LONG_ENCRYPTION, ENCRYPT_ALGORITHM } = process.env;
 
 const login = async (req, res) => {
@@ -22,9 +24,14 @@ const login = async (req, res) => {
         if (encryptedPassword !== user.password) {
           return res.status(404).send({ message: "Contraseña incorrecta" });
         }
+        const token = singToken(user._id);
         res
           .status(200)
-          .send({ message: "Usuario logueado correctamente", id: user._id });
+          .send({
+            message: "Usuario logueado correctamente",
+            id: user._id,
+            token,
+          });
       }
     );
   } catch (error) {

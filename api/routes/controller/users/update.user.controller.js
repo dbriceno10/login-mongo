@@ -16,6 +16,14 @@ const updateUser = async (req, res) => {
     if (!user) {
       return res.status(404).send({ message: "Usuario no encontrado" });
     }
+    const userEmail = await User.findOne({ email: email.trim().toLowerCase() });
+    if (userEmail && userEmail._id !== id) {
+      return res.status(404).send({ message: "Email ya existe" });
+    }
+    const userUsername = await User.findOne({ username: username.trim().toLowerCase() });
+    if (userUsername && userUsername._id !== id) {
+      return res.status(404).send({ message: "Username ya existe" });
+    }
     await User.findByIdAndUpdate(id, {
       username: username ? username : user.username,
       name: name ? name : user.name,
@@ -69,6 +77,9 @@ const updatePassword = async (req, res) => {
     }
     if (newPassword !== repiteNewPassword) {
       return res.status(404).send({ message: "Las contraseñas no coinciden" });
+    }
+    if(newPassword.length < 6){
+      return res.status(404).send({ message: "La contraseña debe tener al menos 6 caracteres" });
     }
     crypto.randomBytes(parseInt(BYTES), (error, salt) => {
       const newSalt = salt.toString(BASE);
