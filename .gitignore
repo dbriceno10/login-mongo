@@ -1,0 +1,16 @@
+# dotenv environment variables file
+.env
+
+# Dependency directories
+node_modules/
+
+
+# lockfile
+yarn.lock
+package-lock.json
+.eslintcache
+
+#docker
+docker-compose.yaml
+docker/database/postgres/data
+ejemplos_sequelize
