@@ -1,6 +1,8 @@
 const User = require("../../../models/User.js");
 const crypto = require("crypto");
 require("dotenv").config();
+const alert = require("alert");
+const { emailValidation } = require("../utils/regex");
 const { BYTES, BASE, ITERATIONS, LONG_ENCRYPTION, ENCRYPT_ALGORITHM } =
   process.env;
 
@@ -8,21 +10,29 @@ const register = async (req, res) => {
   let { name, lastname, email, username, password, repitePassword, avatar } =
     req.body;
   try {
+    if (!emailValidation(email)) {
+      alert("El email no es válido");
+      return res.redirect("/users/register");
+    }
     const emailUser = await User.findOne({ email: email.trim().toLowerCase() });
     if (emailUser) {
-      return res.status(404).send({ message: "El email ya se ha registrado" });
+      alert("El email ya está en uso");
+      return res.redirect("/users/register");
     }
     const usernameUser = await User.findOne({
       username: username.trim().toLowerCase(),
     });
     if (usernameUser) {
-      return res.status(404).send({ message: "El username ya se ha registrado" });
+      alert("El username ya está en uso");
+      return res.redirect("/users/register");
     }
     if (password !== repitePassword) {
-      return res.status(404).send({ message: "Las contraseñas no coinciden" });
+      alert("Las contraseñas no coinciden");
+      return res.redirect("/users/register");
     }
-    if(password.length < 6){
-      return res.status(404).send({ message: "La contraseña debe tener al menos 6 caracteres" });
+    if (password.length < 6) {
+      alert("La contraseña debe tener al menos 6 caracteres");
+      return res.redirect("/users/register");
     }
     if (!avatar) {
       avatar =
@@ -39,12 +49,12 @@ const register = async (req, res) => {
         async (error, key) => {
           const emailUser = await User.findOne({ email: email });
           if (emailUser) {
-            return res.status(404).send({ message: "El usuario ya existe" });
+            alert("El email ya está en uso");
+            return res.redirect("/users/register");
           }
           if (password !== repitePassword) {
-            return res
-              .status(404)
-              .send({ message: "Las contraseñas no coinciden" });
+            alert("Las contraseñas no coinciden");
+            return res.redirect("/users/register");
           }
 
           const encryptedPassword = key.toString(BASE);
@@ -57,16 +67,15 @@ const register = async (req, res) => {
             salt: newSalt,
             avatar,
           });
-
-          res
-            .status(200)
-            .send({ message: "Usuario creado correctamente", id: newUser._id });
+          alert("Usuario creado correctamente");
+          res.redirect("/");
         }
       );
     });
   } catch (error) {
     console.log(error);
-    res.status(404).send(error);
+    alert("Error al crear el usuario");
+    res.redirect("/");
   }
 };
 

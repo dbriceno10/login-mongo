@@ -1,51 +1,66 @@
 const User = require("../../../models/User");
 const crypto = require("crypto");
 require("dotenv").config();
+const alert = require("alert");
+const { emailValidation } = require("../utils/regex");
 const { BYTES, BASE, ITERATIONS, LONG_ENCRYPTION, ENCRYPT_ALGORITHM } =
   process.env;
 
 const updateUser = async (req, res) => {
-  const { id } = req.params;
+  const { userId } = req.session;
   let { username, name, lastname, email, avatar } = req.body;
   username = username.trim().toLowerCase();
   name = name.trim().toLowerCase();
   lastname = lastname.trim().toLowerCase();
   email = email.trim().toLowerCase();
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).send({ message: "Usuario no encontrado" });
+      alert("No existe el usuario");
+      return res.redirect("/users/update");
+    }
+    if(email) {
+      if (!emailValidation.test(email)) {
+        alert("El email no es válido");
+        return res.redirect("/users/update");
+      }
     }
     const userEmail = await User.findOne({ email: email.trim().toLowerCase() });
-    if (userEmail && userEmail._id !== id) {
-      return res.status(404).send({ message: "Email ya existe" });
+    if (userEmail && userEmail._id !== userId) {
+      alert("El email ya está en uso");
+      return res.redirect("/users/update");
     }
-    const userUsername = await User.findOne({ username: username.trim().toLowerCase() });
-    if (userUsername && userUsername._id !== id) {
-      return res.status(404).send({ message: "Username ya existe" });
+    const userUsername = await User.findOne({
+      username: username.trim().toLowerCase(),
+    });
+    if (userUsername && userUsername._id !== userId) {
+      alert("El username ya está en uso");
+      return res.redirect("/users/update");
     }
-    await User.findByIdAndUpdate(id, {
+    await User.findByIdAndUpdate(userId, {
       username: username ? username : user.username,
       name: name ? name : user.name,
       lastname: lastname ? lastname : user.lastname,
       email: email ? email : user.email,
       avatar: avatar ? avatar : user.avatar,
     });
-    res.status(200).send({ message: "Usuario actualizado correctamente" });
+    alert("Usuario actualizado");
+    res.redirect("/home");
   } catch (error) {
     console.log(error);
-    res.status(404).send(error);
+    alert("Ha ocurrido un error");
+    res.redirect("/users/update");
   }
 };
 
 const verifyPassword = async (req, res) => {
-  const { id } = req.params;
+  const { userId } = req.session;
   const { password } = req.body;
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
     if (!user) {
-      console.log("Usuario no encontrado");
-      return res.status(404).send({ message: "Usuario no encontrado" });
+      alert("No existe el usuario");
+      return res.redirect("/users/verifypassword");
     }
     crypto.pbkdf2(
       password,
@@ -56,30 +71,35 @@ const verifyPassword = async (req, res) => {
       async (error, key) => {
         const encryptedPassword = key.toString(BASE);
         if (encryptedPassword !== user.password) {
-          return res.status(404).send({ message: "Contraseña incorrecta" });
+          alert("Contraseña incorrecta");
+          return res.redirect("/users/verifypassword");
         }
-        res.status(200).send({ message: "Contraseña correcta" });
+        res.redirect("/users/updatepassword");
       }
     );
   } catch (error) {
     console.log(error);
-    res.status(404).send(error);
+    alert("Ha ocurrido un error");
+    res.redirect("/users/verifypassword");
   }
 };
 
 const updatePassword = async (req, res) => {
-  const { id } = req.params;
+  const { userId } = req.session;
   const { newPassword, repiteNewPassword } = req.body;
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).send({ message: "Usuario no encontrado" });
+      alert("No existe el usuario");
+      return res.redirect("/users/updatepassword");
     }
     if (newPassword !== repiteNewPassword) {
-      return res.status(404).send({ message: "Las contraseñas no coinciden" });
+      alert("Las contraseñas no coinciden");
+      return res.redirect("/users/updatepassword");
     }
-    if(newPassword.length < 6){
-      return res.status(404).send({ message: "La contraseña debe tener al menos 6 caracteres" });
+    if (newPassword.length < 6) {
+      alert("La contraseña debe tener al menos 6 caracteres");
+      return res.redirect("/users/updatepassword");
     }
     crypto.randomBytes(parseInt(BYTES), (error, salt) => {
       const newSalt = salt.toString(BASE);
@@ -91,17 +111,19 @@ const updatePassword = async (req, res) => {
         ENCRYPT_ALGORITHM, //algoritmo de encriptación
         async (error, key) => {
           const encryptedPassword = key.toString(BASE);
-          await User.findByIdAndUpdate(id, {
+          await User.findByIdAndUpdate(userId, {
             password: encryptedPassword,
             salt: newSalt,
           });
         }
       );
     });
-    res.status(200).send({ message: "Contraseña actualizada correctamente" });
+    alert("Contraseña actualizada");
+    res.redirect("/home");
   } catch (error) {
     console.log(error);
-    res.status(404).send(error);
+    alert("Ha ocurrido un error");
+    res.redirect("/users/updatepassword");
   }
 };
 

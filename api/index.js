@@ -3,11 +3,12 @@ const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 require("dotenv").config();
 const server = express();
 const routes = require("./routes/index.js");
 require("./database");
-
+const { SESSION_NAME, SESSION_SECRET } = process.env;
 server.name = "API";
 
 server.use(cors());
@@ -15,8 +16,29 @@ server.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 server.use(bodyParser.json({ limit: "50mb" }));
 server.use(cookieParser());
 server.use(morgan("dev"));
+server.use(
+  session({
+    name: SESSION_NAME,
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 5, // Está en milisegundos --> 5 min
+    },
+  })
+);
+
+// setInterval(() => {
+//   console.log(req.session.maxAge);
+// }, 1000 );
+
+// server.use((req, res, next) => {
+//   console.log(req.session);
+//   next();
+// });
+
 server.use((req, res, next) => {
-   // update to match the domain you will make the request from
+  // update to match the domain you will make the request from
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Credentials", "true");
   res.header(
@@ -26,7 +48,7 @@ server.use((req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
   res.header("Access-Control-Expose-Headers", "Content-Range");
   res.header("Content-Range", "bytes:0-9/100");
-
+  // console.log(req.session);
   next();
 });
 

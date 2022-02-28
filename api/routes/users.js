@@ -9,13 +9,17 @@ const {
   updatePassword,
   verifyPassword,
 } = require("./controller/users/update.user.controller");
+const {
+  redirectHome,
+  redirectLogin,
+} = require("./controller/utils/middleware");
 
-router.post("/register", register);
+router.post("/register", redirectHome, register);
 router.get("/", getUsers);
-router.post("/login", login);
+router.post("/login", redirectHome, login);
 router.get("/detail/:id", getUser);
 router.delete("/delete/:id", deleteUser);
-router.put("/update/:id", updateUser);
-router.put("/updatepassword/:id", updatePassword);
-router.post("/verifypassword/:id", verifyPassword);
+router.post("/update", redirectLogin, updateUser);
+router.post("/updatepassword", redirectLogin, updatePassword);
+router.post("/verifypassword", redirectLogin, verifyPassword);
 module.exports = router;
